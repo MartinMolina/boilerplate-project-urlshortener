@@ -28,49 +28,55 @@ const bodyParser = require('body-parser');
 const url = require('url');
 const dns = require('dns');
 const mongoose = require('mongoose');
-const { doesNotMatch } = require('assert');
 
 mongoose.connect(process.env.MONGO_URI);
 
-var shortenedURLSchema = new mongoose.Schema({original_url: String, short_url: Number});
-
+var shortenedURLSchema = new mongoose.Schema({
+  original_url: {type: String},
+  short_url: {type: Number}
+});
 var shortenedURL = mongoose.model('shortenedURL', shortenedURLSchema);
 
 app.post('/api/shorturl', bodyParser.urlencoded({extended: true}), (req, res) => {
   try {
     var link = new URL(req.body.url);
-    // URL is valid
-    (dns.lookup(link.hostname, (err) => {
-      if (err) res.json({error: "Invalid Hostname"}); // Host is not valid
-      else {
-        // Host is valid
-        shortenedURL.findOne({original_url: link.href})
-        .then((url) => {
-
-          if(!url) { // If short URL doesn't exist
-
-            // Create new shortenedURL document
-            shortenedURL.where({}).countDocuments()
-            .then((quantity) => {
-              new shortenedURL({original_url: link.href, short_url: quantity}).save();
-            });
-
-            // Fetch and show the newly created shortenedURL document
-            shortenedURL.findOne({original_url: link.href})
-            .then((url) => {
-              res.json({original_url: link.href, short_url: url.short_url});
-            });
-
-          }
-          else // If short url does exist
-            res.json({original_url: link.href, short_url: url.short_url});
-        });
-      }}));
-
   }
-  catch { // URL is not valid
+  catch { // If URL is invalid
     res.json({error: "Invalid URL"});
+    return;
   }
+  dns.lookup(link.hostname, (err, address) => {
+    
+    if (!address) // If host is invalid
+      res.json({error: "Invalid URL"});
+    else {
+
+      // Fetch shortenedURL of the posted URL
+      shortenedURL.findOne({original_url: link.href})
+      .then((url) => {
+
+        if(!url) { // If it doesn't exist
+
+          // Create and send new shortenedURL document
+          shortenedURL.countDocuments()
+          .then((quantity) => {
+            new shortenedURL({original_url: link.href, short_url: quantity}).save();
+            res.json({original_url: link.href, short_url: quantity});
+          });
+        }
+        else // If it exists
+          res.json({original_url: link.href, short_url: url.short_url});
+      });
+    }
+  });       
 });
 
-app.get('/api/shorturl/:value',)
+app.get('/api/shorturl/:value', (req, res) => {
+  shortenedURL.findOne({short_url: req.params.value})
+  .then((sUrl) => {
+    if(sUrl)
+      res.redirect(sUrl.original_url);
+    else
+      res.json({error: "Short URL does not exist"});
+  });
+});
