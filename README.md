@@ -1,3 +1,7 @@
 # URL Shortener Microservice
 
-This is the boilerplate code for the URL Shortener Microservice project. Instructions for building your project can be found at https://www.freecodecamp.org/learn/back-end-development-and-apis/back-end-development-and-apis-projects/url-shortener-microservice.
+This is a project for the Back End Development and APIs freeCodeCamp certificate.
+
+Site: https://martinmolina-freecodecamp-urlshortener.onrender.com/
+
+Certificate: https://www.freecodecamp.org/certification/martin_molina/back-end-development-and-apis
